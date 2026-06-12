@@ -1125,6 +1125,29 @@ img {
   background: var(--success);
 }
 
+.status-item-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.status-item-row {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.status-item-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .status-actions {
   opacity: 0;
   pointer-events: none;

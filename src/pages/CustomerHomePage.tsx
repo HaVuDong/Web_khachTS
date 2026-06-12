@@ -109,6 +109,19 @@ const orderStatusLabels: Record<OrderStatus, string> = {
   CANCELLED: 'Đã hủy',
 };
 
+function getOrderCookingLabel(order: SessionOrder) {
+  if (order.status === 'CANCELLED') return 'Đã hủy';
+  if (order.status === 'COMPLETED') return 'Đã hoàn tất';
+
+  const activeItems = order.items.filter((item) => item.status !== 'CANCELLED');
+  const readyCount = activeItems.filter((item) => item.status === 'READY').length;
+  const preparingCount = activeItems.filter((item) => item.status === 'PREPARING').length;
+
+  if (activeItems.length > 0 && readyCount === activeItems.length) return 'Tất cả món đã xong';
+  if (preparingCount > 0) return `${readyCount}/${activeItems.length} món đã xong`;
+  return orderStatusLabels[order.status];
+}
+
 function formatMoney(value: number) {
   return `${Number(value || 0).toLocaleString('vi-VN')}đ`;
 }
@@ -407,7 +420,7 @@ export default function CustomerHomePage() {
               <article key={order._id} className="session-order-card">
                 <div>
                   <strong>#{order._id.slice(-6).toUpperCase()}</strong>
-                  <span>{orderStatusLabels[order.status]}</span>
+                  <span>{getOrderCookingLabel(order)}</span>
                 </div>
                 <button
                   type="button"
@@ -472,7 +485,7 @@ export default function CustomerHomePage() {
                     <article key={order._id} className="order-detail-card">
                       <div className="order-detail-heading">
                         <strong>#{order._id.slice(-6).toUpperCase()}</strong>
-                        <span>{orderStatusLabels[order.status]}</span>
+                        <span>{getOrderCookingLabel(order)}</span>
                       </div>
                       {order.items.map((item) => (
                         <div key={item._id} className="order-item-status-row">
