@@ -1,30 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Coffee, Plus, Search, ShoppingBag, Sparkles } from 'lucide-react';
+import { Coffee, House, Plus, Search, ShoppingBag, Sparkles } from 'lucide-react';
 import CartBottomSheet from '../components/CartBottomSheet';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { getApiErrorMessage } from '../utils/apiError';
+import {
+  loadCartItems,
+  readCustomerInfo,
+  saveCartItems,
+  type CustomerInfo,
+  type StoredCartItem,
+} from '../utils/customerSession';
 
 const ALL_CATEGORY = 'Tất cả';
 
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  note: string;
-}
-
-interface CustomerInfo {
-  name: string;
-  tableName: string;
-  tenantId: string;
-  qrToken: string;
-  phone: string;
-  tableId: string;
-  tableSessionId: string;
-}
+export type CartItem = StoredCartItem;
 
 interface PublicMenuItem {
   _id: string;
@@ -36,34 +27,16 @@ interface PublicMenuItem {
   available?: boolean;
 }
 
-function readCustomerInfo(): CustomerInfo | null {
-  const name = localStorage.getItem('customerName');
-  const phone = localStorage.getItem('customerPhone');
-  const tableName = localStorage.getItem('tableName');
-  const tenantId = localStorage.getItem('tenantId');
-  const qrToken = localStorage.getItem('qrToken');
-  const tableId = localStorage.getItem('tableId');
-  const tableSessionId = localStorage.getItem('tableSessionId');
-
-  if (!name || !tableName || !tenantId || !qrToken) return null;
-  return {
-    name,
-    tableName,
-    tenantId,
-    qrToken,
-    phone: phone || '',
-    tableId: tableId || '',
-    tableSessionId: tableSessionId || '',
-  };
-}
-
 export default function MenuPage() {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORY);
   const [searchTerm, setSearchTerm] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [customerInfo] = useState<CustomerInfo | null>(() => readCustomerInfo());
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const info = readCustomerInfo();
+    return info ? loadCartItems(info.tableSessionId) : [];
+  });
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<PublicMenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([ALL_CATEGORY]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +84,11 @@ export default function MenuPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [customerInfo, fetchMenu, navigate]);
+
+  useEffect(() => {
+    if (!customerInfo) return;
+    saveCartItems(customerInfo.tableSessionId, cart);
+  }, [cart, customerInfo]);
 
   const filteredItems = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -186,6 +164,9 @@ export default function MenuPage() {
             <span className="status-dot status-dot-green" />
             Đang mở bàn
           </span>
+          <button type="button" className="icon-button" onClick={() => navigate('/home')} aria-label="Về trang bàn">
+            <House size={18} />
+          </button>
           <span className="header-spark">
             <Sparkles size={18} />
           </span>

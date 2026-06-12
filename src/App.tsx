@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QrCode } from 'lucide-react';
 import WelcomePage from './pages/WelcomePage';
+import CustomerHomePage from './pages/CustomerHomePage';
 import MenuPage from './pages/MenuPage';
 import OrderStatusPage from './pages/OrderStatusPage';
 
@@ -10,6 +11,7 @@ function App() {
       <div className="app-shell">
         <Routes>
           <Route path="/table/:tenantId/:qrToken" element={<WelcomePage />} />
+          <Route path="/home" element={<CustomerHomePage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/status/:tenantId/:orderId" element={<OrderStatusPage />} />
           <Route

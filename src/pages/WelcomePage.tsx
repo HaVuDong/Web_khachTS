@@ -58,7 +58,7 @@ export default function WelcomePage() {
     localStorage.setItem('customerName', name.trim());
     localStorage.setItem('customerPhone', phone.trim());
 
-    navigate('/menu');
+    navigate('/home');
   };
 
   if (routeError || error) {

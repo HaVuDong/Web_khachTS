@@ -6,6 +6,7 @@ import type { CartItem } from '../pages/MenuPage';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { getApiErrorCode, getApiErrorItems, getApiErrorMessage } from '../utils/apiError';
+import { rememberSessionOrder } from '../utils/customerSession';
 
 interface CartBottomSheetProps {
   cart: CartItem[];
@@ -103,10 +104,11 @@ export default function CartBottomSheet({
       const realOrderId = res.data._id;
 
       localStorage.setItem('current_order_id', realOrderId);
+      rememberSessionOrder(customerInfo.tableSessionId, realOrderId);
 
       setCart([]);
       setIsSubmitting(false);
-      navigate(`/status/${customerInfo.tenantId}/${realOrderId}`);
+      navigate('/home', { state: { submittedOrderId: realOrderId } });
     } catch (error) {
       console.error('Failed to submit order', error);
       setSubmitError(formatOrderError(error));
