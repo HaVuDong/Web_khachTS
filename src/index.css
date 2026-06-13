@@ -1590,6 +1590,11 @@ img {
   color: #86efac;
 }
 
+.item-status-pill.status-served {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+
 .item-status-pill.status-preparing {
   background: rgba(56, 189, 248, 0.14);
   color: #7dd3fc;

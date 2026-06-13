@@ -5,7 +5,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 
 type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-type OrderItemStatus = 'PENDING' | 'PREPARING' | 'READY' | 'CANCELLED';
+type OrderItemStatus = 'PENDING' | 'PREPARING' | 'READY' | 'SERVED' | 'CANCELLED';
 
 interface PublicOrderStatus {
   status: OrderStatus;
@@ -22,6 +22,7 @@ const itemStatusLabels: Record<OrderItemStatus, string> = {
   PENDING: 'Chờ xác nhận',
   PREPARING: 'Đang làm',
   READY: 'Đã xong',
+  SERVED: 'Đã phục vụ',
   CANCELLED: 'Đã hủy',
 };
 
@@ -56,9 +57,11 @@ export default function OrderStatusPage() {
 
   const content = useMemo(() => {
     const activeItems = (orderStatus.items || []).filter((item) => item.status !== 'CANCELLED');
-    const readyCount = activeItems.filter((item) => item.status === 'READY').length;
+    const readyCount = activeItems.filter((item) => item.status === 'READY' || item.status === 'SERVED').length;
+    const servedCount = activeItems.filter((item) => item.status === 'SERVED').length;
     const preparingCount = activeItems.filter((item) => item.status === 'PREPARING').length;
     const allItemsReady = activeItems.length > 0 && readyCount === activeItems.length;
+    const allItemsServed = activeItems.length > 0 && servedCount === activeItems.length;
 
     if (orderStatus.status === 'CANCELLED') {
       return {
@@ -75,6 +78,16 @@ export default function OrderStatusPage() {
         icon: <CheckCircle2 size={46} />,
         title: 'Đơn đã hoàn tất',
         desc: 'Đơn đã được quầy xác nhận hoàn tất.',
+        tone: 'done',
+        progressIndex: 2,
+      };
+    }
+
+    if (allItemsServed) {
+      return {
+        icon: <CheckCircle2 size={46} />,
+        title: 'Món đã phục vụ',
+        desc: 'Tất cả món trong đơn đã được nhân viên phục vụ tại bàn.',
         tone: 'done',
         progressIndex: 2,
       };

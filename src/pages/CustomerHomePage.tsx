@@ -27,7 +27,7 @@ import {
   type StoredCartItem,
 } from '../utils/customerSession';
 
-type OrderItemStatus = 'PENDING' | 'PREPARING' | 'READY' | 'CANCELLED';
+type OrderItemStatus = 'PENDING' | 'PREPARING' | 'READY' | 'SERVED' | 'CANCELLED';
 type OrderStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 type PaymentStatus = 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED' | 'FAILED';
 
@@ -99,6 +99,7 @@ const itemStatusLabels: Record<OrderItemStatus, string> = {
   PENDING: 'Chờ xác nhận',
   PREPARING: 'Đang làm',
   READY: 'Đã xong',
+  SERVED: 'Đã phục vụ',
   CANCELLED: 'Đã hủy',
 };
 
@@ -114,9 +115,11 @@ function getOrderCookingLabel(order: SessionOrder) {
   if (order.status === 'COMPLETED') return 'Đã hoàn tất';
 
   const activeItems = order.items.filter((item) => item.status !== 'CANCELLED');
-  const readyCount = activeItems.filter((item) => item.status === 'READY').length;
+  const readyCount = activeItems.filter((item) => item.status === 'READY' || item.status === 'SERVED').length;
+  const servedCount = activeItems.filter((item) => item.status === 'SERVED').length;
   const preparingCount = activeItems.filter((item) => item.status === 'PREPARING').length;
 
+  if (activeItems.length > 0 && servedCount === activeItems.length) return 'Tất cả món đã phục vụ';
   if (activeItems.length > 0 && readyCount === activeItems.length) return 'Tất cả món đã xong';
   if (preparingCount > 0) return `${readyCount}/${activeItems.length} món đã xong`;
   return orderStatusLabels[order.status];
