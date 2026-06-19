@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import axios from 'axios';
+import { QRCodeCanvas } from 'qrcode.react';
 import { API_BASE_URL } from '../config/api';
 import { getApiErrorMessage } from '../utils/apiError';
 import {
@@ -185,9 +186,12 @@ export default function CustomerHomePage() {
       return;
     }
 
-    void fetchSummary();
+    const initialTimeoutId = window.setTimeout(() => void fetchSummary(), 0);
     const intervalId = window.setInterval(() => void fetchSummary(true), 5000);
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearTimeout(initialTimeoutId);
+      window.clearInterval(intervalId);
+    };
   }, [customerInfo, fetchSummary, navigate]);
 
   useEffect(() => {
@@ -197,6 +201,12 @@ export default function CustomerHomePage() {
       try {
         const res = await axios.get<PaymentResponse>(
           `${API_BASE_URL}/payments/${encodeURIComponent(payment.paymentId)}/status`,
+          {
+            params: {
+              tenantId: customerInfo?.tenantId,
+              sessionId: customerInfo?.tableSessionId,
+            },
+          },
         );
         setPayment(res.data);
         if (res.data.status === 'PAID') {
@@ -210,18 +220,14 @@ export default function CustomerHomePage() {
 
     const intervalId = window.setInterval(pollPayment, 3000);
     return () => window.clearInterval(intervalId);
-  }, [fetchSummary, payment?.paymentId, payment?.status]);
+  }, [customerInfo?.tableSessionId, customerInfo?.tenantId, fetchSummary, payment?.paymentId, payment?.status]);
 
   const billItems = summary?.bill.items || [];
   const billTotal = summary?.bill.finalAmount || 0;
   const draftTotal = draftCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const hasBill = billTotal > 0;
 
-  const qrImageUrl = useMemo(() => {
-    const qrValue = payment?.qrCode || payment?.checkoutUrl || '';
-    if (!qrValue) return '';
-    return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrValue)}`;
-  }, [payment]);
+  const paymentQrValue = useMemo(() => payment?.qrCode || payment?.checkoutUrl || '', [payment]);
 
   const sendTableRequest = useCallback(
     async (type: 'CALL_STAFF' | 'PAY_CASH' | 'PRINT_BILL') => {
@@ -602,7 +608,18 @@ export default function CustomerHomePage() {
                     </div>
                   ) : (
                     <>
-                      {qrImageUrl ? <img className="payment-qr" src={qrImageUrl} alt="QR thanh toán" /> : null}
+                      {paymentQrValue ? (
+                        <QRCodeCanvas
+                          className="payment-qr"
+                          value={paymentQrValue}
+                          size={260}
+                          level="M"
+                          bgColor="#ffffff"
+                          fgColor="#111827"
+                          marginSize={2}
+                          title="QR thanh toán"
+                        />
+                      ) : null}
                       {payment.checkoutUrl ? (
                         <button
                           type="button"
