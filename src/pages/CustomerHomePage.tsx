@@ -152,6 +152,8 @@ export default function CustomerHomePage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [payment, setPayment] = useState<PaymentResponse | null>(null);
+  const [showContinuePopup, setShowContinuePopup] = useState(false);
+  const [sessionClosed, setSessionClosed] = useState(false);
 
   const submittedOrderId = (location.state as { submittedOrderId?: string } | null)?.submittedOrderId;
 
@@ -225,10 +227,18 @@ export default function CustomerHomePage() {
   }, [customerInfo?.tableSessionId, customerInfo?.tenantId, fetchSummary, payment?.paymentId, payment?.status]);
 
   const billItems = summary?.bill.items || [];
-  const isSessionPaid = summary?.session.paymentStatus === 'PAID';
   const billTotal = summary?.bill.finalAmount || 0;
+  const isSessionPaid = summary?.session.paymentStatus === 'PAID' && billTotal === 0;
   const draftTotal = draftCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const hasBill = billTotal > 0 && !isSessionPaid;
+  const hasBill = billTotal > 0;
+
+  useEffect(() => {
+    if (summary?.session.paymentStatus === 'PAID' && billTotal === 0 && !sessionClosed) {
+      setShowContinuePopup(true);
+    } else {
+      setShowContinuePopup(false);
+    }
+  }, [summary?.session.paymentStatus, billTotal, sessionClosed]);
 
   const paymentQrValue = useMemo(() => payment?.qrCode || payment?.checkoutUrl || '', [payment]);
 
@@ -290,6 +300,26 @@ export default function CustomerHomePage() {
       setPaymentError(getApiErrorMessage(err, 'Không thể tạo mã thanh toán. Vui lòng gọi nhân viên.'));
     } finally {
       setPaymentLoading(false);
+    }
+  }, [customerInfo, billTotal]);
+
+  const handleCloseSession = useCallback(async () => {
+    if (!customerInfo) return;
+    try {
+      await axios.post(
+        `${API_BASE_URL}/orders/${encodeURIComponent(customerInfo.tenantId)}/table-sessions/${encodeURIComponent(
+          customerInfo.tableSessionId,
+        )}/close`,
+      );
+      setSessionClosed(true);
+      setShowContinuePopup(false);
+      localStorage.removeItem('customerSession');
+    } catch (err) {
+      console.error('Failed to close session', err);
+      // Even if API fails, close locally
+      setSessionClosed(true);
+      setShowContinuePopup(false);
+      localStorage.removeItem('customerSession');
     }
   }, [customerInfo]);
 
@@ -373,16 +403,16 @@ export default function CustomerHomePage() {
       ) : null}
 
       <section className="home-actions-grid" aria-label="Thao tác bàn">
-        <button type="button" className={`home-action-card glass-panel ${isSessionPaid ? 'disabled-card' : ''}`} onClick={() => !isSessionPaid && navigate('/menu')}>
+        <button type="button" className="home-action-card glass-panel" onClick={() => navigate('/menu')}>
           <span className="home-action-icon accent-orange">
             <Coffee size={24} />
           </span>
           <strong>Menu</strong>
-          <small>{isSessionPaid ? 'Đã thanh toán' : 'Chọn món'}</small>
+          <small>Chọn món</small>
           <ArrowRight size={18} />
         </button>
 
-        <button type="button" className={`home-action-card glass-panel ${isSessionPaid ? 'disabled-card' : ''}`} onClick={() => !isSessionPaid && setOrdersOpen(true)}>
+        <button type="button" className="home-action-card glass-panel" onClick={() => setOrdersOpen(true)}>
           <span className="home-action-icon accent-cyan">
             <ShoppingBag size={24} />
           </span>
@@ -641,6 +671,43 @@ export default function CustomerHomePage() {
             </div>
           </aside>
         </>
+      ) : null}
+
+      {showContinuePopup ? (
+        <div className="sheet-overlay">
+          <div className="home-sheet modal-sheet">
+            <div className="home-sheet-header">
+              <h3>Thanh toán thành công</h3>
+              <button type="button" className="icon-button" onClick={() => setShowContinuePopup(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="home-sheet-body" style={{ textAlign: 'center', paddingTop: 20 }}>
+              <CheckCircle2 size={48} color="#4ade80" style={{ margin: '0 auto 16px' }} />
+              <p style={{ fontSize: '1.1rem', marginBottom: 24, lineHeight: 1.5 }}>
+                Bạn đã thanh toán thành công. Bạn có muốn gọi thêm món không?
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => void handleCloseSession()}
+                >
+                  Không (Đóng phiên)
+                </button>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  style={{ flex: 1 }}
+                  onClick={() => setShowContinuePopup(false)}
+                >
+                  Có (Dùng tiếp)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : null}
     </main>
   );
