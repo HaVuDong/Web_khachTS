@@ -67,6 +67,8 @@ interface TableSessionSummary {
     status: string;
     openedAt?: string;
     lastActivityAt?: string;
+    paymentStatus?: string;
+    paidAt?: string;
   };
   customer: {
     name?: string;
@@ -223,9 +225,10 @@ export default function CustomerHomePage() {
   }, [customerInfo?.tableSessionId, customerInfo?.tenantId, fetchSummary, payment?.paymentId, payment?.status]);
 
   const billItems = summary?.bill.items || [];
+  const isSessionPaid = summary?.session.paymentStatus === 'PAID';
   const billTotal = summary?.bill.finalAmount || 0;
   const draftTotal = draftCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const hasBill = billTotal > 0;
+  const hasBill = billTotal > 0 && !isSessionPaid;
 
   const paymentQrValue = useMemo(() => payment?.qrCode || payment?.checkoutUrl || '', [payment]);
 
@@ -349,8 +352,8 @@ export default function CustomerHomePage() {
             <strong>{summary?.bill.totalQuantity || 0}</strong>
           </div>
           <div className="home-stat wide">
-            <span>Tạm tính</span>
-            <strong>{formatMoney(billTotal)}</strong>
+            <span>{isSessionPaid ? 'Đã thanh toán' : 'Tạm tính'}</span>
+            <strong>{isSessionPaid ? '0đ' : formatMoney(billTotal)}</strong>
           </div>
         </div>
       </section>
@@ -370,16 +373,16 @@ export default function CustomerHomePage() {
       ) : null}
 
       <section className="home-actions-grid" aria-label="Thao tác bàn">
-        <button type="button" className="home-action-card glass-panel" onClick={() => navigate('/menu')}>
+        <button type="button" className={`home-action-card glass-panel ${isSessionPaid ? 'disabled-card' : ''}`} onClick={() => !isSessionPaid && navigate('/menu')}>
           <span className="home-action-icon accent-orange">
             <Coffee size={24} />
           </span>
           <strong>Menu</strong>
-          <small>Chọn món</small>
+          <small>{isSessionPaid ? 'Đã thanh toán' : 'Chọn món'}</small>
           <ArrowRight size={18} />
         </button>
 
-        <button type="button" className="home-action-card glass-panel" onClick={() => setOrdersOpen(true)}>
+        <button type="button" className={`home-action-card glass-panel ${isSessionPaid ? 'disabled-card' : ''}`} onClick={() => !isSessionPaid && setOrdersOpen(true)}>
           <span className="home-action-icon accent-cyan">
             <ShoppingBag size={24} />
           </span>
@@ -402,12 +405,12 @@ export default function CustomerHomePage() {
           <ArrowRight size={18} />
         </button>
 
-        <button type="button" className="home-action-card glass-panel" onClick={() => setPaymentOpen(true)}>
+        <button type="button" className={`home-action-card glass-panel ${isSessionPaid ? 'disabled-card' : ''}`} onClick={() => !isSessionPaid && setPaymentOpen(true)}>
           <span className="home-action-icon accent-violet">
             <CreditCard size={24} />
           </span>
           <strong>Thanh toán</strong>
-          <small>{formatMoney(billTotal)}</small>
+          <small>{isSessionPaid ? 'Đã thanh toán' : formatMoney(billTotal)}</small>
           <ArrowRight size={18} />
         </button>
       </section>
@@ -488,7 +491,7 @@ export default function CustomerHomePage() {
                 <section className="sheet-section">
                   <div className="home-section-header compact">
                     <h3>Đang mở</h3>
-                    <strong>{formatMoney(billTotal)}</strong>
+                    <strong>{isSessionPaid ? 'Đã thanh toán' : formatMoney(billTotal)}</strong>
                   </div>
                   {summary.orders.map((order) => (
                     <article key={order._id} className="order-detail-card">
@@ -549,13 +552,13 @@ export default function CustomerHomePage() {
               <section className="sheet-section bill-box">
                 <div className="home-section-header compact">
                   <h3>Hóa đơn</h3>
-                  <strong>{formatMoney(billTotal)}</strong>
+                  <strong>{isSessionPaid ? 'Đã thanh toán' : formatMoney(billTotal)}</strong>
                 </div>
                 {billItems.length ? (
                   billItems.map((item) => (
                     <div key={`${item.orderId}-${item._id}`} className="bill-line">
                       <span>{item.quantity}x {item.name}</span>
-                      <strong>{formatMoney(item.subtotal)}</strong>
+                      <strong className={isSessionPaid ? 'strikethrough-text' : ''}>{formatMoney(item.subtotal)}</strong>
                     </div>
                   ))
                 ) : (
