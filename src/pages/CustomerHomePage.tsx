@@ -314,14 +314,16 @@ export default function CustomerHomePage() {
       setSessionClosed(true);
       setShowContinuePopup(false);
       localStorage.removeItem('customerSession');
+      navigate('/', { replace: true });
     } catch (err) {
       console.error('Failed to close session', err);
       // Even if API fails, close locally
       setSessionClosed(true);
       setShowContinuePopup(false);
       localStorage.removeItem('customerSession');
+      navigate('/', { replace: true });
     }
-  }, [customerInfo]);
+  }, [customerInfo, navigate]);
 
   if (!customerInfo) return null;
 
