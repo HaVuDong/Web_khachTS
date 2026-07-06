@@ -24,6 +24,7 @@ import { getApiErrorMessage } from '../utils/apiError';
 import {
   loadCartItems,
   readCustomerInfo,
+  clearCustomerSession,
   type CustomerInfo,
   type StoredCartItem,
 } from '../utils/customerSession';
@@ -313,14 +314,14 @@ export default function CustomerHomePage() {
       );
       setSessionClosed(true);
       setShowContinuePopup(false);
-      localStorage.removeItem('customerSession');
+      clearCustomerSession();
       navigate('/', { replace: true });
     } catch (err) {
       console.error('Failed to close session', err);
       // Even if API fails, close locally
       setSessionClosed(true);
       setShowContinuePopup(false);
-      localStorage.removeItem('customerSession');
+      clearCustomerSession();
       navigate('/', { replace: true });
     }
   }, [customerInfo, navigate]);

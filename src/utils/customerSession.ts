@@ -82,3 +82,13 @@ export function rememberSessionOrder(tableSessionId: string, orderId: string) {
   const next = [orderId, ...current.filter((id) => id !== orderId)].slice(0, 20);
   localStorage.setItem(`customer_orders_${tableSessionId}`, JSON.stringify(next));
 }
+
+export function clearCustomerSession() {
+  localStorage.removeItem('customerName');
+  localStorage.removeItem('customerPhone');
+  localStorage.removeItem('tableName');
+  localStorage.removeItem('tenantId');
+  localStorage.removeItem('qrToken');
+  localStorage.removeItem('tableId');
+  localStorage.removeItem('tableSessionId');
+}

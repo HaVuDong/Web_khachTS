@@ -33,6 +33,7 @@ export default function OrderStatusPage() {
 
   useEffect(() => {
     if (!tenantId || !orderId) return;
+    if (orderStatus.status === 'COMPLETED' || orderStatus.status === 'CANCELLED') return;
 
     const fetchStatus = async () => {
       try {
@@ -53,7 +54,7 @@ export default function OrderStatusPage() {
     const interval = window.setInterval(fetchStatus, 3000);
 
     return () => window.clearInterval(interval);
-  }, [tenantId, orderId]);
+  }, [tenantId, orderId, orderStatus.status]);
 
   const content = useMemo(() => {
     const activeItems = (orderStatus.items || []).filter((item) => item.status !== 'CANCELLED');
